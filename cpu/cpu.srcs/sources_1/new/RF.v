@@ -25,19 +25,19 @@
 
 module RF (
     // SIGNALS
-    input wire clk,
-    input wire rst,
-    input wire RegWr,
-    output reg RFExp,
+    input  wire        clk,
+    input  wire        rst,
+    input  wire        RegWr,
+    output reg         RFExp,
     // DATA_A
-    input wire [31:0] ReadAddr1,
-    output reg [31:0] ReadData1,
+    input  wire [31:0] ReadAddr1,
+    output reg  [31:0] ReadData1,
     // DATA_B
-    input wire [31:0] ReadAddr2,
-    output reg [31:0] ReadData2,
+    input  wire [31:0] ReadAddr2,
+    output reg  [31:0] ReadData2,
     // DATA_IN
-    input wire [31:0] WriteAddr,
-    input wire [31:0] WriteData
+    input  wire [31:0] WriteAddr,
+    input  wire [31:0] WriteData
 );
   reg [0:31] r[31:0];  // Register array
   integer i;
