@@ -30,10 +30,10 @@ module RF (
     input  wire        RegWr,
     output reg         RFExp,
     // DATA_A
-    input  wire [31:0] ReadAddr1,
+    input  wire [ 4:0] ReadAddr1,
     output reg  [31:0] ReadData1,
     // DATA_B
-    input  wire [31:0] ReadAddr2,
+    input  wire [ 4:0] ReadAddr2,
     output reg  [31:0] ReadData2,
     // DATA_IN
     input  wire [31:0] WriteAddr,
