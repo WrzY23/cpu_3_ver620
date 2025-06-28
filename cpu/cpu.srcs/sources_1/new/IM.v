@@ -9,11 +9,7 @@
 // Target Devices: NULL
 // Tool Versions: NULL
 // Description: 
-//      A simple instruction memory which always gives a 32bit instruction
-//      according to the 32bit PC register at the positive edge of the clock.
-//      
-//      It can store 1024 instructions, each of which is 32 bits long.
-//      
+//      A simple 4KB instruction memory       
 //        
 // Dependencies: NULL
 // 
@@ -21,29 +17,33 @@
 // Revision 0.01 - File Created
 // Additional Comments:
 // 
-// TODO: reset might be needed?
-// TODO: [0:1023]or[1023:0]?
-// 
 //////////////////////////////////////////////////////////////////////////////////
 
 
 module IM (
     input wire clk,
-    input wire [31:0] ReadAddress,
-    output reg [31:0] ReadInstruction,
-    output reg Exception_IM  // Exception for Instruction Memory 
+    input wire [31:0] ReadAddr,  // access by Bytes 
+    output reg [31:0] ReadInstr,
+    output reg IMExp
 );
-  reg [31:0] instruction_array[0:1023];  // 1024 instructions, each 32 bits long
+
+  // 1024 * 4B = 4KB
+  parameter IM_SIZE = 1024;
+  reg [31:0] instr_array[0:IM_SIZE-1];
+
+  // INIT
   initial begin
-    $readmemh("prog.inst", instruction_array);  // 加载程序
+    $readmemh("prog.instr", instr_array);  // TODO
   end
+
+  // ACCESS
   always @(posedge clk) begin
-    if (ReadAddress < 1024) begin
-      ReadInstruction <= instruction_array[ReadAddress];
-      Exception_IM <= 0;  // 清除异常标志
-    end else begin
-      Exception_IM <= 1;  // 地址越界异常
-      ReadInstruction <= 32'h00000000;  // 返回默认值
+    if (ReadAddr[31:2] < IM_SIZE) begin
+      ReadInstr <= instr_array[ReadAddr[31:2]];
+      IMExp <= 0;
+    end else begin  // EXCEPTIONS
+      IMExp <= 1;
+      ReadInstr <= 32'h00000000;
     end
   end
 endmodule

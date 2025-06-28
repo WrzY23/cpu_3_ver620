@@ -24,27 +24,47 @@
 
 
 module RF (
-    input wire clk,
-    input wire [31:0] ReadAddr1,
-    input wire [31:0] ReadAddr2,
-    input wire [31:0] WriteAddr,
-    input wire [31:0] WriteData,
-    input wire RegWr,
-    output reg [31:0] ReadData1,
-    output reg [31:0] ReadData2,
-    output reg Exception_RF  // Exception for Register File 
+    // SIGNALS
+    input  wire        clk,
+    input  wire        rst,
+    input  wire        RegWr,
+    output reg         RFExp,
+    // DATA_A
+    input  wire [ 4:0] ReadAddr1,
+    output reg  [31:0] ReadData1,
+    // DATA_B
+    input  wire [ 4:0] ReadAddr2,
+    output reg  [31:0] ReadData2,
+    // DATA_IN
+    input  wire [31:0] WriteAddr,
+    input  wire [31:0] WriteData
 );
   reg [0:31] r[31:0];  // Register array
-  always @(posedge clk) begin
-    if (WriteAddr == 0) begin
-      Exception_RF <= 1;  // Attempt to write to zero register
-    end else if (RegWr && WriteAddr != 0) begin
-      Exception_RF <= 0;  // No exception
-      r[WriteAddr] <= WriteData;
+  integer i;
+
+  // POSEDGE
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
+      for (i = 0; i < 32; i = i + 1) r[i] <= 0;
+      RFExp <= 0;
+    end else begin
+      if (WriteAddr == 0) begin
+        RFExp <= 1;  // Attempt to write to zero register
+      end else if (RegWr && WriteAddr != 0) begin
+        RFExp <= 0;  // No exception
+        r[WriteAddr] <= WriteData;
+      end
     end
   end
-  always @(negedge clk) begin
-    ReadData1 <= r[ReadAddr1];
-    ReadData2 <= r[ReadAddr2];
+
+  // NEGEDGE
+  always @(negedge clk or posedge rst) begin
+    if (rst) begin
+      ReadData1 <= 0;
+      ReadData2 <= 0;
+    end else begin
+      ReadData1 <= r[ReadAddr1];
+      ReadData2 <= r[ReadAddr2];
+    end
   end
 endmodule
