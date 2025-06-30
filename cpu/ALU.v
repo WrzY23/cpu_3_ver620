@@ -18,26 +18,8 @@
 // Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////
-// ALUOp
-// 00000: add
-// 00001: sub
-// 00010: slt
-// 00011: sltu
-// 00100: and
-// 00101: nor
-// 00110: or
-// 00111: xor
-// 01000: sll
-// 01001: srl
-// 01010: sra
-// 01011: lui
-// 01100: andn
-// 01101: orn
-// 01110: mul  // TODO:后续改为单独模块处理
-// 01111: div  // TODO:后续改为单独模块处理
-// TODO addu subu
-/////////////////////
+`include "../defines/defines.v"
+
 module ALU (
     // CONF
     input wire [4:0] ALUOp,
@@ -50,6 +32,10 @@ module ALU (
     output wire ALUExp
     // output reg Zero  //? 由于采用了提前分支预测，或许不需要zero
 );
+
+
+
+
 
   // RESULTS
   wire [31:0] add_sub_res;
@@ -83,15 +69,15 @@ module ALU (
   wire        adder_cout;
 
   assign adder_a = A;
-  assign adder_b = (ALUOp == 5'b0001 | ALUOp == 5'b0010 | ALUOp == 5'b0011) ? ~B : B;
-  assign adder_cin = (ALUOp == 5'b0001 | ALUOp == 5'b0010 | ALUOp == 5'b0011) ? 1'b1 : 1'b0;
+  assign adder_b = (ALUOp == `ALU_SUB | ALUOp == `ALU_SLT | ALUOp == `ALU_SLTU) ? ~B : B;
+  assign adder_cin = (ALUOp == `ALU_SUB | ALUOp == `ALU_SLT | ALUOp == `ALU_SLTU) ? 1'b1 : 1'b0;
   assign {adder_cout, adder_res} = adder_a + adder_b + adder_cin;
 
 
   // ADD, SUB  
   assign add_sub_res = adder_res;
   assign add_exc = (adder_a[31] ~^ adder_b[31]) & (adder_a[31] ^ adder_res[31]);
-  assign sub_exc = (adder_a[31] ^ adder_b[31]) | (adder_a[31] ^ adder_res[31]);
+  assign sub_exc = (adder_a[31] ^ adder_b[31]) & (adder_a[31] ^ adder_res[31]);
 
   // SLT 
   assign slt_res = {31'b0, ((A[31] & ~B[31]) | ((A[31] ~^ B[31]) & A[31]))};
@@ -124,7 +110,7 @@ module ALU (
   assign sll_res = A << B;
 
   // SRL, SRA 
-  assign sr64_result = {{32{(ALUOp == 5'b1010) & A[31]}}, A[31:0]} >> B[4:0];
+  assign sr64_result = {{32{(ALUOp == `ALU_SRA) & A[31]}}, A[31:0]} >> B[4:0];
   assign sr_res = sr64_result[31:0];
 
   // MUL  //TODO
@@ -136,27 +122,28 @@ module ALU (
   assign div_exc = (B == 32'b0);
 
   // ALU result
-  assign Result = ({32{ALUOp == 5'b00000}} & add_sub_res
-                |{32{ALUOp == 5'b00100}} & add_sub_res
-                |{32{ALUOp == 5'b00010}} & slt_res
-                |{32{ALUOp == 5'b00011}} & sltu_res
-                |{32{ALUOp == 5'b00100}} & and_res
-                |{32{ALUOp == 5'b00101}} & nor_res
-                |{32{ALUOp == 5'b00110}} & or_res
-                |{32{ALUOp == 5'b00111}} & xor_res
-                |{32{ALUOp == 5'b01000}} & sll_res
-                |{32{ALUOp == 5'b01001}} & sr_res
-                |{32{ALUOp == 5'b01010}} & sr_res
-                |{32{ALUOp == 5'b01011}} & lui_res
-                |{32{ALUOp == 5'b01100}} & andn_res
-                |{32{ALUOp == 5'b01101}} & orn_res
-                |{32{ALUOp == 5'b01110}} & mul_res
-                |{32{ALUOp == 5'b01111}} & div_res);
+  assign Result = ({32{ALUOp == `ALU_ADD}}   & add_sub_res
+                  |{32{ALUOp == `ALU_SUB}}   & add_sub_res
+                  |{32{ALUOp == `ALU_SLT}}   & slt_res
+                  |{32{ALUOp == `ALU_SLTU}}  & sltu_res
+                  |{32{ALUOp == `ALU_AND}}   & and_res
+                  |{32{ALUOp == `ALU_NOR}}   & nor_res
+                  |{32{ALUOp == `ALU_OR}}    & or_res
+                  |{32{ALUOp == `ALU_XOR}}   & xor_res
+                  |{32{ALUOp == `ALU_SLL}}   & sll_res
+                  |{32{ALUOp == `ALU_SRL}}   & sr_res
+                  |{32{ALUOp == `ALU_SRA}}   & sr_res
+                  |{32{ALUOp == `ALU_LUI}}   & lui_res
+                  |{32{ALUOp == `ALU_ANDN}}  & andn_res
+                  |{32{ALUOp == `ALU_ORN}}   & orn_res
+                  |{32{ALUOp == `ALU_MUL}}   & mul_res
+                  |{32{ALUOp == `ALU_DIV}}   & div_res
+                  |{32{ALUOp == `ALU_DEFAULT}} & 32'b0);
 
   // ALU exceptions
-  assign ALUExp = ({1{ALUOp == 5'b00000}} & add_ovf
-                |{1{ALUOp == 5'b00001}} & sub_ovf
-                |{1{ALUOp == 5'b01111}} & div_exc);
+  assign ALUExp = ({1{ALUOp == `ALU_ADD}}    & add_ovf
+                  |{1{ALUOp == `ALU_SUB}}    & sub_ovf
+                  |{1{ALUOp == `ALU_DIV}}    & div_exc);
 
 
 endmodule
